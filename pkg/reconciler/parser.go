@@ -178,7 +178,7 @@ func (p *Parser) parseRoleBinding(
 
 				om := objectMeta
 				om.Namespace = namespace.Name
-				subs := managerSubjectsToRbacSubjects(subjects)
+				subs := managerSubjectsToRbacSubjectsSettingNamespace(subjects, namespace.Name)
 
 				p.parsedRoleBindings = append(p.parsedRoleBindings, rbacv1.RoleBinding{
 					ObjectMeta: om,
@@ -190,7 +190,7 @@ func (p *Parser) parseRoleBinding(
 
 	} else if rb.Namespace != "" {
 		objectMeta.Namespace = rb.Namespace
-		subs := managerSubjectsToRbacSubjects(subjects)
+		subs := managerSubjectsToRbacSubjectsSettingNamespace(subjects, rb.Namespace)
 
 		p.parsedRoleBindings = append(p.parsedRoleBindings, rbacv1.RoleBinding{
 			ObjectMeta: objectMeta,
@@ -253,6 +253,32 @@ func managerSubjectsToRbacSubjects(subjects []rbacmanagerv1beta1.Subject) []rbac
 			Name:      sub.Name,
 			Namespace: sub.Namespace,
 		})
+	}
+	return subs
+}
+
+func managerSubjectsToRbacSubjectsSettingNamespace(subjects []rbacmanagerv1beta1.Subject, namespace string) []rbacv1.Subject {
+	var subs []rbacv1.Subject
+	for _, sub := range subjects {
+		if sub.Kind == "ServiceAccount" {
+			ns := sub.Namespace
+			if ns == "" {
+				ns = namespace
+			}
+			subs = append(subs, rbacv1.Subject{
+				Kind:      sub.Kind,
+				APIGroup:  sub.APIGroup,
+				Name:      sub.Name,
+				Namespace: ns,
+			})
+		} else {
+			subs = append(subs, rbacv1.Subject{
+				Kind:      sub.Kind,
+				APIGroup:  sub.APIGroup,
+				Name:      sub.Name,
+				Namespace: sub.Namespace,
+			})
+		}
 	}
 	return subs
 }

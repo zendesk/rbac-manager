@@ -284,6 +284,43 @@ func TestManagerToRbacSubjects(t *testing.T) {
 	assert.ElementsMatch(t, expected, actual, "expected subjects to match")
 }
 
+func TestManagerToRbacSubjectsSettingNamespace(t *testing.T) {
+	expected := []rbacv1.Subject{
+		{
+			Kind:      rbacv1.ServiceAccountKind,
+			Name:      "robot",
+			Namespace: "another-namespace",
+		},
+	}
+	subjects := []rbacmanagerv1beta1.Subject{
+		{
+			Subject: rbacv1.Subject{
+				Kind: rbacv1.ServiceAccountKind,
+				Name: "robot",
+			},
+		},
+	}
+	actual := managerSubjectsToRbacSubjectsSettingNamespace(subjects, "another-namespace")
+	assert.ElementsMatch(t, expected, actual, "expected subjects to match")
+}
+
+func TestManagerToRbacSubjectsNotSettingNamespace(t *testing.T) {
+	expected := []rbacv1.Subject{
+		{
+			Kind:      rbacv1.ServiceAccountKind,
+			Name:      "robot",
+			Namespace: "another-namespace",
+		},
+	}
+	subjects := []rbacmanagerv1beta1.Subject{
+		{
+			Subject: expected[0],
+		},
+	}
+	actual := managerSubjectsToRbacSubjectsSettingNamespace(subjects, "another-namespace")
+	assert.ElementsMatch(t, expected, actual, "expected subjects to match")
+}
+
 func TestServiceAccountParsing(t *testing.T) {
 	for _, n := range saTestCases {
 		t.Run(n.name, func(t *testing.T) {
