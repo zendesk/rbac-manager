@@ -170,7 +170,7 @@ func (r *Reconciler) reconcileServiceAccounts(requested *[]v1.ServiceAccount) er
 	for _, requestedSA := range *requested {
 		alreadyExists := false
 		for _, existingSA := range existing.Items {
-			if saLooseMatches(&existingSA, &requestedSA) || saMatches(&existingSA, &requestedSA) {
+			if saMatches(&existingSA, &requestedSA) {
 				alreadyExists = true
 				matchingServiceAccounts = append(matchingServiceAccounts, existingSA)
 				break
@@ -209,16 +209,16 @@ func (r *Reconciler) reconcileServiceAccounts(requested *[]v1.ServiceAccount) er
 		}
 	}
 
-	for _, serviceAccountToCreate := range serviceAccountsToCreate {
-		logrus.Infof("Creating Service Account: %v", serviceAccountToCreate.Name)
-		_, err := r.Clientset.CoreV1().ServiceAccounts(serviceAccountToCreate.ObjectMeta.Namespace).Create(context.TODO(), &serviceAccountToCreate, metav1.CreateOptions{})
-		if err != nil {
-			logrus.Errorf("Error creating Service Account: %v", err)
-			metrics.ErrorCounter.Inc()
-		} else {
-			metrics.ChangeCounter.WithLabelValues("serviceaccounts", "create").Inc()
-		}
-	}
+	// for _, serviceAccountToCreate := range serviceAccountsToCreate {
+	// 	logrus.Infof("Creating Service Account: %v", serviceAccountToCreate.Name)
+	// 	_, err := r.Clientset.CoreV1().ServiceAccounts(serviceAccountToCreate.ObjectMeta.Namespace).Create(context.TODO(), &serviceAccountToCreate, metav1.CreateOptions{})
+	// 	if err != nil {
+	// 		logrus.Errorf("Error creating Service Account: %v", err)
+	// 		metrics.ErrorCounter.Inc()
+	// 	} else {
+	// 		metrics.ChangeCounter.WithLabelValues("serviceaccounts", "create").Inc()
+	// 	}
+	// }
 
 	return nil
 }
