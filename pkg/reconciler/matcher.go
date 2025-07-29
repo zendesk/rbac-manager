@@ -50,10 +50,6 @@ func rbMatches(existingRB *rbacv1.RoleBinding, requestedRB *rbacv1.RoleBinding) 
 	return true
 }
 
-func saLooseMatches(existingSA *v1.ServiceAccount, requestedSA *v1.ServiceAccount) bool {
-	return metaLooseMatches(&existingSA.ObjectMeta, &requestedSA.ObjectMeta)
-}
-
 func saMatches(existingSA *v1.ServiceAccount, requestedSA *v1.ServiceAccount) bool {
 	if !metaMatches(&existingSA.ObjectMeta, &requestedSA.ObjectMeta) {
 		return false
@@ -101,10 +97,6 @@ func metaMatches(existingMeta *metav1.ObjectMeta, requestedMeta *metav1.ObjectMe
 	}
 
 	return true
-}
-
-func metaLooseMatches(existingMeta *metav1.ObjectMeta, requestedMeta *metav1.ObjectMeta) bool {
-	return existingMeta.Name == requestedMeta.Name && existingMeta.Namespace == requestedMeta.Namespace
 }
 
 func ownerRefsMatch(existingOwnerRefs *[]metav1.OwnerReference, requestedOwnerRefs *[]metav1.OwnerReference) bool {
