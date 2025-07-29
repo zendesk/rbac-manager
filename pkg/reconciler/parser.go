@@ -67,17 +67,28 @@ func (p *Parser) Parse(rbacDef rbacmanagerv1beta1.RBACDefinition) error {
 }
 
 func (p *Parser) parseRBACBinding(rbacBinding rbacmanagerv1beta1.RBACBinding, namePrefix string, namespaces *v1.NamespaceList) error {
-	parsedServiceAccounts := p.parseServiceAccount(rbacBinding)
-	staticServiceAccounts := []v1.ServiceAccount{}
-	dynamicServiceAccounts := []v1.ServiceAccount{}
-	for _, sa := range parsedServiceAccounts {
-		if sa.Namespace == "" {
-			dynamicServiceAccounts = append(dynamicServiceAccounts, sa)
-		} else {
-			staticServiceAccounts = append(staticServiceAccounts, sa)
+	for _, requestedSubject := range rbacBinding.Subjects {
+		if requestedSubject.Kind == "ServiceAccount" {
+			pullsecrets := []v1.LocalObjectReference{}
+			for _, secret := range requestedSubject.ImagePullSecrets {
+				pullsecrets = append(pullsecrets, v1.LocalObjectReference{Name: secret})
+			}
+			annotations := make(map[string]string)
+			managedPullSecrets := strings.Join(requestedSubject.ImagePullSecrets, ",")
+			annotations[ManagedPullSecretsAnnotationKey] = managedPullSecrets
+			p.parsedServiceAccounts = append(p.parsedServiceAccounts, v1.ServiceAccount{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            requestedSubject.Name,
+					Namespace:       requestedSubject.Namespace,
+					OwnerReferences: p.ownerRefs,
+					Labels:          kube.Labels,
+					Annotations:     annotations,
+				},
+				ImagePullSecrets:             pullsecrets,
+				AutomountServiceAccountToken: requestedSubject.AutomountServiceAccountToken,
+			})
 		}
 	}
-	p.parsedServiceAccounts = append(p.parsedServiceAccounts, staticServiceAccounts...)
 
 	if rbacBinding.ClusterRoleBindings != nil {
 		for _, requestedCRB := range rbacBinding.ClusterRoleBindings {
@@ -95,44 +106,8 @@ func (p *Parser) parseRBACBinding(rbacBinding rbacmanagerv1beta1.RBACBinding, na
 				return err
 			}
 		}
-		for _, rb := range p.parsedRoleBindings {
-			for _, sa := range dynamicServiceAccounts {
-				clonedSA := sa
-				clonedSA.Namespace = rb.Namespace
-				p.parsedServiceAccounts = append(p.parsedServiceAccounts, clonedSA)
-			}
-		}
 	}
 	return nil
-}
-
-func (p *Parser) parseServiceAccount(rbacBinding rbacmanagerv1beta1.RBACBinding) []v1.ServiceAccount {
-	parsedServiceAccounts := []v1.ServiceAccount{}
-
-	for _, requestedSubject := range rbacBinding.Subjects {
-		if requestedSubject.Kind == "ServiceAccount" {
-			pullsecrets := []v1.LocalObjectReference{}
-			for _, secret := range requestedSubject.ImagePullSecrets {
-				pullsecrets = append(pullsecrets, v1.LocalObjectReference{Name: secret})
-			}
-			annotations := make(map[string]string)
-			managedPullSecrets := strings.Join(requestedSubject.ImagePullSecrets, ",")
-			annotations[ManagedPullSecretsAnnotationKey] = managedPullSecrets
-			parsedServiceAccounts = append(parsedServiceAccounts, v1.ServiceAccount{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:            requestedSubject.Name,
-					Namespace:       requestedSubject.Namespace,
-					OwnerReferences: p.ownerRefs,
-					Labels:          kube.Labels,
-					Annotations:     annotations,
-				},
-				ImagePullSecrets:             pullsecrets,
-				AutomountServiceAccountToken: requestedSubject.AutomountServiceAccountToken,
-			})
-		}
-	}
-
-	return parsedServiceAccounts
 }
 
 func (p *Parser) parseClusterRoleBinding(
