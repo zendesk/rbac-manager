@@ -160,7 +160,12 @@ func TestReconcileRbacDefServiceAccounts(t *testing.T) {
 			Name:      "ci-bot",
 			Namespace: "bots",
 		}},
-	}}, []rbacv1.ClusterRoleBinding{}, []corev1.ServiceAccount{})
+	}}, []rbacv1.ClusterRoleBinding{}, []corev1.ServiceAccount{{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ci-bot",
+			Namespace: "bots",
+		},
+	}})
 
 	testEmptyExample(t, client, rbacDef.Name)
 }
