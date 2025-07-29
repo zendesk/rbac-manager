@@ -170,7 +170,7 @@ func (r *Reconciler) reconcileServiceAccounts(requested *[]v1.ServiceAccount) er
 	for _, requestedSA := range *requested {
 		alreadyExists := false
 		for _, existingSA := range existing.Items {
-			if saMatches(&existingSA, &requestedSA) {
+			if saLooseMatches(&existingSA, &requestedSA) || saMatches(&existingSA, &requestedSA) {
 				alreadyExists = true
 				matchingServiceAccounts = append(matchingServiceAccounts, existingSA)
 				break
