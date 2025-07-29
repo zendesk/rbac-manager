@@ -68,7 +68,7 @@ func (p *Parser) Parse(rbacDef rbacmanagerv1beta1.RBACDefinition) error {
 
 func (p *Parser) parseRBACBinding(rbacBinding rbacmanagerv1beta1.RBACBinding, namePrefix string, namespaces *v1.NamespaceList) error {
 	for _, requestedSubject := range rbacBinding.Subjects {
-		if requestedSubject.Kind == "ServiceAccount" {
+		if requestedSubject.Kind == "ServiceAccount" && requestedSubject.Namespace != "" {
 			pullsecrets := []v1.LocalObjectReference{}
 			for _, secret := range requestedSubject.ImagePullSecrets {
 				pullsecrets = append(pullsecrets, v1.LocalObjectReference{Name: secret})
